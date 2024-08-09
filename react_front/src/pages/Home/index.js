@@ -1,6 +1,8 @@
 import React, {Component, createRef} from 'react'
 import {Badge, Button, Card, Col, Container, ListGroup, Row} from "react-bootstrap";
 import Header from "../../components/Header";
+import RestClient from "../../RestAPI/RestClient";
+import AppUrl from "../../RestAPI/AppUrl";
 
 export default class Home extends Component {
 
@@ -39,7 +41,7 @@ export default class Home extends Component {
                 barcode.detect(canvas).then(([data]) => {
                     if (data) {
                         this.setState({
-                            barcode : data.rawValue
+                            barcode: data.rawValue
                         });
                     }
                 })
@@ -51,6 +53,42 @@ export default class Home extends Component {
 
     componentWillUnmount() {
         this.stopCamera();
+    }
+
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (prevState.barcode !== this.state.barcode && this.state.barcode !== '') {
+            this.addOrder();
+        }
+    }
+
+    addOrder = () => {
+        const {barcode, order, totalPrice} = this.state;
+
+        RestClient.postRequest(AppUrl.product, {
+            barcode
+        }).then((res) => {
+            const status = res.status;
+            const result = res.data;
+
+            if (status === 200) {
+                let newOrder = [...order, {
+                    pd_barcode: result.data.pd_barcode,
+                    pd_name: result.data.pd_name,
+                    pd_price: result.data.pd_price,
+                }];
+
+                let newPrice = totalPrice + result.data.pd_price;
+
+                this.setState({
+                    order: newOrder,
+                    totalPrice: newPrice
+                })
+            } else {
+                alert("Ürün Bulunamadı");
+            }
+        }).catch((err) => {
+            alert("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz...");
+        })
     }
 
     stopCamera = () => {
@@ -79,7 +117,7 @@ export default class Home extends Component {
     }
 
     render() {
-        const {barcode} = this.state;
+        const {barcode, order, totalPrice} = this.state;
 
         return (
             <>
@@ -105,23 +143,31 @@ export default class Home extends Component {
                                 </Card.Body>
                             </Card>
                         </Col>
-                        <Col md={5}>
-                            <Card>
-                                <Card.Header>Sepet</Card.Header>
-                                <Card.Body>
-                                    <ListGroup>
-                                        <ListGroup.Item className={"d-flex justify-content-between align-items-center"}>
-                                            Macbook x 1
+                        {(order.length > 0) &&
+                            <Col md={5}>
+                                <Card>
+                                    <Card.Header>Sepet</Card.Header>
+                                    <Card.Body>
+                                        <ListGroup>
+                                            {order.map((item,index)=>{
+                                                return (
+                                                    <ListGroup.Item key={index}
+                                                        className={"d-flex justify-content-between align-items-center"}>
+                                                        {item.pd_name} x 1
 
-                                            <Badge pill bg={"success"} className={"text-white"}>53000 ₺</Badge>
-                                        </ListGroup.Item>
-                                    </ListGroup>
-                                </Card.Body>
-                                <Card.Footer>
-                                    Total Ücret: 53000₺
-                                </Card.Footer>
-                            </Card>
-                        </Col>
+                                                        <Badge pill bg={"success"} className={"text-white"}>{item.pd_price} ₺</Badge>
+                                                    </ListGroup.Item>
+                                                )
+                                            })}
+
+                                        </ListGroup>
+                                    </Card.Body>
+                                    <Card.Footer>
+                                        Total Ücret: {totalPrice} ₺
+                                    </Card.Footer>
+                                </Card>
+                            </Col>
+                        }
                     </Row>
                 </Container>
             </>
