@@ -3,6 +3,8 @@ import {Badge, Button, Card, Col, Container, ListGroup, Row} from "react-bootstr
 import Header from "../../components/Header";
 import RestClient from "../../RestAPI/RestClient";
 import AppUrl from "../../RestAPI/AppUrl";
+import Notification from "../../RestAPI/Notification";
+import {Helmet} from "react-helmet";
 
 export default class Home extends Component {
 
@@ -84,10 +86,14 @@ export default class Home extends Component {
                     totalPrice: newPrice
                 })
             } else {
-                alert("Ürün Bulunamadı");
+                Notification.error(result);
             }
         }).catch((err) => {
-            alert("Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz...");
+            console.log(err);
+            Notification.error({
+                title: "Hata",
+                message: "Bir Hata Oluştu. Lütfen daha sonra tekrar deneyiniz"
+            });
         })
     }
 
@@ -123,6 +129,11 @@ export default class Home extends Component {
             <>
                 <Header/>
 
+                <Helmet>
+                    <meta charSet="utf-8"/>
+                    <title>mBarcode | MFSoftware Blog</title>
+                </Helmet>
+
                 <Container className={"container mt-3"}>
                     <Button variant={"success"} onClick={() => this.openCamera()}>Kamerayı Aç</Button>
                     <Button variant={"danger ml-2"} onClick={() => this.stopCamera()}>Kamerayı Kapat</Button>
@@ -149,17 +160,17 @@ export default class Home extends Component {
                                     <Card.Header>Sepet</Card.Header>
                                     <Card.Body>
                                         <ListGroup>
-                                            {order.map((item,index)=>{
+                                            {order.map((item, index) => {
                                                 return (
                                                     <ListGroup.Item key={index}
-                                                        className={"d-flex justify-content-between align-items-center"}>
+                                                                    className={"d-flex justify-content-between align-items-center"}>
                                                         {item.pd_name} x 1
 
-                                                        <Badge pill bg={"success"} className={"text-white"}>{item.pd_price} ₺</Badge>
+                                                        <Badge pill bg={"success"}
+                                                               className={"text-white"}>{item.pd_price} ₺</Badge>
                                                     </ListGroup.Item>
                                                 )
                                             })}
-
                                         </ListGroup>
                                     </Card.Body>
                                     <Card.Footer>
